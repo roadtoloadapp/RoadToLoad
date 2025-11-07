@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8">
+  <title>RoadToLoad – Térkép</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+
+</head>
+
+<body>
+  <header>
+    <h1>RoadToLoad</h1>
+
+    <div class="hamburger" id="hamburger">
+      <div></div><div></div><div></div>
+    </div>
+
+    <nav id="nav-menu">
+      <a id="about-link">Rólunk</a>
+      <a id="contact-link">Kapcsolat</a>
+      <select id="language-select">
+        <option value="hu">HU</option>
+        <option value="en">EN</option>
+      </select>
+      <button id="generate" class="generate-btn">🎲 Túra generálása</button>
+    </nav>
+  </header>
+
+  <div id="map"></div>
+  <div id="bar-list"></div>
+
+  <button id="mobile-generate" class="mobile-generate">🎲 Túra generálása</button>
+
+  <footer>© RoadToLoad 2025</footer>
+
+  <div id="about-overlay" class="overlay">
+    <button class="close-btn" id="close-about">×</button>
+    <p id="about-text">
+      <b>A RoadToLoad</b> Budapest legizgalmasabb helyeit köti össze egyetlen élménnyé.<br><br>
+      Nem útvonalat adunk, hanem történeteket, amiket te írsz meg — egy kocsmától a másikig.<br><br>
+      Töltsd újra a várost, fedezd fel a rejtett arcát, és indulj el a saját utadon.
+    </p>
+  </div>
+
+  <div id="contact-overlay" class="overlay">
+    <button class="close-btn" id="close-contact">×</button>
+    <form id="contact-form">
+      <h2 id="contact-title">Kapcsolatfelvétel</h2>
+      <h3 id="contact-email">hello@roadtoload.hu</h3>
+      <input type="text" id="name" placeholder="Név" required>
+      <input type="email" id="email" placeholder="E-mail cím" required>
+      <textarea id="message" placeholder="Üzenet..." required></textarea>
+      <button type="submit" class="submit-btn" id="send-btn">Küldés</button>
+    </form>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([47.4979, 19.0402], 13);
+    L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19
+    }).addTo(map);
+
+    const bars = [
+      { name: "Mazel Tov", street: "Akácfa utca 47.", coords: [47.497, 19.060] },
+      { name: "Szimpla Kert", street: "Kazinczy utca 14.", coords: [47.49700901903984, 19.06332904316594] },
+      { name: "Instant-Fogas", street: "Akácfa utca 49–51.", coords: [47.4984, 19.0610] },
+      { name: "Kisüzem", street: "Kis Diófa utca 2.", coords: [47.4980, 19.0633] },
+      { name: "Dzzs Bár", street: "Dohány utca 20.", coords: [47.4995, 19.0595] },
+      { name: "Ellátó Kert", street: "Kazinczy utca 48.", coords: [47.4992, 19.0641] }
+    ];
+
+    const barListDiv = document.getElementById('bar-list');
+
+    function generateTour() {
+      map.eachLayer(layer => {
+        if (layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer);
+      });
+      const shuffled = bars.sort(() => 0.5 - Math.random()).slice(0, 4);
+      let previous = null;
+      let listHTML = `<h3>${currentLang === 'hu' ? 'Mai túrád:' : 'Your tour:'}</h3>`;
+      shuffled.forEach((bar, i) => {
+        L.marker(bar.coords).addTo(map).bindPopup(`<b>${bar.name}</b><br>${bar.street}`);
+        listHTML += `<b>${i + 1}. ${bar.name}</b><br><span style="font-size:0.85rem;">${bar.street}</span><br><br>`;
+        if (previous) L.polyline([previous.coords, bar.coords], { color: '#fdd835', weight: 5 }).addTo(map);
+        previous = bar;
+      });
+      barListDiv.innerHTML = listHTML;
+      barListDiv.style.display = "block";
+    }
+
+    document.getElementById('generate').addEventListener('click', generateTour);
+    document.getElementById('mobile-generate').addEventListener('click', generateTour);
+
+    const aboutOverlay = document.getElementById('about-overlay');
+    const contactOverlay = document.getElementById('contact-overlay');
+
+    document.getElementById('about-link').addEventListener('click', () => aboutOverlay.style.display = 'flex');
+    document.getElementById('contact-link').addEventListener('click', () => contactOverlay.style.display = 'flex');
+    document.getElementById('close-about').addEventListener('click', () => aboutOverlay.style.display = 'none');
+    document.getElementById('close-contact').addEventListener('click', () => contactOverlay.style.display = 'none');
+
+    document.getElementById('contact-form').addEventListener('submit', e => {
+      e.preventDefault();
+      alert(currentLang === 'hu' ? "Köszönjük az üzenetet!" : "Thank you for your message!");
+      e.target.reset();
+      contactOverlay.style.display = 'none';
+    });
+
+    const hamburger = document.getElementById('hamburger');
+    const navMenu = document.getElementById('nav-menu');
+    hamburger.addEventListener('click', () => navMenu.classList.toggle('show'));
+
+    // 🌐 Nyelvváltó
+    let currentLang = 'hu';
+    const langSelect = document.getElementById('language-select');
+
+    const texts = {
+      hu: {
+        about: "Rólunk",
+        contact: "Kapcsolat",
+        generate: "🎲 Túra generálása",
+        aboutText: "<b>A RoadToLoad</b> Budapest legizgalmasabb helyeit köti össze egyetlen élménnyé.<br><br>Nem útvonalat adunk, hanem történeteket, amiket te írsz meg — egy kocsmától a másikig.<br><br>Töltsd újra a várost, fedezd fel a rejtett arcát, és indulj el a saját utadon.",
+        contactTitle: "Kapcsolatfelvétel",
+        name: "Név",
+        email: "E-mail cím",
+        msg: "Üzenet...",
+        send: "Küldés"
+      },
+      en: {
+        about: "About",
+        contact: "Contact",
+        generate: "🎲 Generate tour",
+        aboutText: "<b>RoadToLoad</b> connects Budapest's most exciting places into one adventure.<br><br>We don’t just give you a route — we give you stories you’ll create, from one bar to the next.<br><br>Reload the city, discover its hidden face, and start your own journey.",
+        contactTitle: "Contact us",
+        name: "Name",
+        email: "E-mail address",
+        msg: "Message...",
+        send: "Send"
+      }
+    };
+
+    langSelect.addEventListener('change', (e) => {
+      currentLang = e.target.value;
+      const t = texts[currentLang];
+      document.getElementById('about-link').textContent = t.about;
+      document.getElementById('contact-link').textContent = t.contact;
+      document.getElementById('generate').textContent = t.generate;
+      document.getElementById('mobile-generate').textContent = t.generate;
+      document.getElementById('about-text').innerHTML = t.aboutText;
+      document.getElementById('contact-title').textContent = t.contactTitle;
+      document.getElementById('name').placeholder = t.name;
+      document.getElementById('email').placeholder = t.email;
+      document.getElementById('message').placeholder = t.msg;
+      document.getElementById('send-btn').textContent = t.send;
+    });
+  </script>
+</body>
+</html>
