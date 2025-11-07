@@ -48,9 +48,10 @@
 
   <div id="contact-overlay" class="overlay">
     <button class="close-btn" id="close-contact">×</button>
-    <form id="contact-form">
+    <form id="contact-form" action="https://api.web3forms.com/submit" method="POST">
       <h2 id="contact-title">Kapcsolatfelvétel</h2>
       <h3 id="contact-email">hello@roadtoload.hu</h3>
+      <input type="hidden" name="access_key" value="fefe9987-1d25-45f4-8f72-8d82ef6f152d">
       <input type="text" id="name" placeholder="Név" required>
       <input type="email" id="email" placeholder="E-mail cím" required>
       <textarea id="message" placeholder="Üzenet..." required></textarea>
@@ -115,7 +116,7 @@
     const navMenu = document.getElementById('nav-menu');
     hamburger.addEventListener('click', () => navMenu.classList.toggle('show'));
 
-    // 🌐 Nyelvváltó
+    // Nyelvváltó
     let currentLang = 'hu';
     const langSelect = document.getElementById('language-select');
 
