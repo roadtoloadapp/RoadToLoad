@@ -4,201 +4,247 @@
   <meta charset="UTF-8">
   <title>RoadToLoad – Térkép</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.counter.dev/script.js" data-id="76b74c5e-2f75-462f-b591-08d048624b98" data-utcoffset="1"></script>
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-
-
+  <link rel="stylesheet" href="style.css">
+ 
 </head>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-TSXP2R9EZ2"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-TSXP2R9EZ2');
-</script>
-  <script id="Cookiebot" src="https://consent.cookiebot.com/uc.js" data-cbid="1d9b9496-1073-41da-a0dd-88f804363688" type="text/javascript" async></script>
-
 <body>
-   <header>
+
+  <header>
     <h1>RoadToLoad</h1>
-
-    <!-- Nyelvválasztó -->
-    <div class="lang-switch">
-      <select id="language-select">
-        <option value="hu">HU</option>
-        <option value="en">EN</option>
-      </select>
+    <div class="header-right">
+      <div class="lang-switch">
+        <select id="language-select" onchange="changeLanguage(this.value)">
+          <option value="hu">HU</option>
+          <option value="en">EN</option>
+        </select>
+      </div>
+      <div class="hamburger" id="hamburger">
+        <div></div><div></div><div></div>
+      </div>
     </div>
-
-    <!-- Hamburger ikon -->
-    <div class="hamburger" id="hamburger">
-      <div></div><div></div><div></div>
-    </div>
-
-    <!-- Menü -->
     <nav id="nav-menu">
-      <a id="about-link">Rólunk</a>
-      <a id="contact-link">Kapcsolat</a>
-      <button id="generate" class="generate-btn">🎲 Túra generálása</button>
+      <a id="nav-about" onclick="showOverlay('about')">Rólunk</a>
+      <a id="nav-contact" onclick="showOverlay('contact')">Kapcsolat</a>
+      <button id="generate" class="generate-btn-classic" onclick="generateTour()">🎲 Túra generálása</button>
     </nav>
   </header>
 
   <div id="map"></div>
-  <div id="bar-list"></div>
 
-  <button id="mobile-generate" class="mobile-generate">🎲 Túra generálása</button>
+  <div id="bar-list" class="draggable">
+    <div class="list-header" id="list-header">
+        <h3 id="list-title">Mai túrád</h3>
+        <button onclick="toggleList()" class="toggle-list-btn" id="toggle-btn">×</button>
+    </div>
+    <div id="list-content">
+        <p id="list-empty-msg" style="padding:20px; font-size:0.9rem; color: #aaa;">Generálj egy túrát az induláshoz!</p>
+    </div>
+  </div>
 
-  <footer>© RoadToLoad 2025</footer>
+  <button id="mobile-generate" class="mobile-generate" onclick="generateTour()">🎲 Túra generálása</button>
 
   <div id="about-overlay" class="overlay">
-    <button class="close-btn" id="close-about">×</button>
-    <p id="about-text">
-      <b>A RoadToLoad</b> Budapest legizgalmasabb helyeit köti össze egyetlen élménnyé.<br><br>
-      Nem útvonalat adunk, hanem történeteket, amiket te írsz meg — egy kocsmától a másikig.<br><br>
-      Töltsd újra a várost, fedezd fel a rejtett arcát, és indulj el a saját utadon.
-    </p>
+    <button class="close-btn" onclick="hideOverlay('about')">×</button>
+    <div class="overlay-text">
+      <p id="about-body">
+        <b>A RoadToLoad</b> Budapest legizgalmasabb helyeit köti össze egyetlen élménnyé.<br><br>
+        Nem útvonalat adunk, hanem történeteket, amiket te írsz meg — egy kocsmától a másikig.<br><br>
+        Töltsd újra a várost, fedezd fel a rejtett arcát, és indulj el a saját utadon.
+      </p>
+    </div>
   </div>
 
   <div id="contact-overlay" class="overlay">
-    <button class="close-btn" id="close-contact">×</button>
-    <form id="contact-form">
-      <h2 id="contact-title">Kapcsolatfelvétel</h2>
+    <button class="close-btn" onclick="hideOverlay('contact')">×</button>
+    <form id="contact-form" onsubmit="event.preventDefault(); alert('Üzenet elküldve!'); hideOverlay('contact');">
+      <h2 id="contact-title-text">Kapcsolatfelvétel</h2>
       <h3 id="contact-email">hello@roadtoload.hu</h3>
-      <input type="text" name="name" id="name" placeholder="Név" required>
-      <input type="email" name="email" id="email" placeholder="E-mail cím" required>
-      <textarea name="message" id="message" placeholder="Üzenet..." required></textarea>
-      <button type="submit" class="submit-btn" id="send-btn">Küldés</button>
+      <input type="text" id="input-name" placeholder="Név" required>
+      <input type="email" id="input-email" placeholder="E-mail cím" required>
+      <textarea id="input-msg" placeholder="Üzenet..." required></textarea>
+      <button type="submit" class="submit-btn" id="btn-send">Küldés</button>
     </form>
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    // 🌍 Térkép
-    const map = L.map('map').setView([47.4979, 19.0402], 13);
-    L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    const translations = {
+        hu: {
+            navAbout: "Rólunk", navContact: "Kapcsolat", btnGen: "🎲 Túra generálása",
+            listTitle: "Mai túrád", emptyMsg: "Generálj egy túrát az induláshoz!",
+            aboutBody: "<b>A RoadToLoad</b> Budapest legizgalmasabb helyeit köti össze egyetlen élménnyé.<br><br>Nem útvonalat adunk, hanem történeteket, amiket te írsz meg — egy kocsmától a másikig.<br><br>Töltsd újra a várost, fedezd fel a rejtett arcát, és indulj el a saját utadon.",
+            contactTitle: "Kapcsolatfelvétel", placeholderName: "Név", placeholderEmail: "E-mail cím",
+            placeholderMsg: "Üzenet...", btnSend: "Küldés", shareBtn: "Túra másolása", copyAlert: "Másolva a vágólapra!",
+            challenges: ["Igyatok egy kört a legolcsóbb shotból!", "Kérdezzétek meg a pultostól: mi a ház specialitása?", "Aki utoljára ér be, az rendeli a kört!", "Tanítsatok meg egy külföldinek egy magyar szót!", "Szelfi a legfurcsább dekorációval!"]
+        },
+        en: {
+            navAbout: "About Us", navContact: "Contact", btnGen: "🎲 Generate Tour",
+            listTitle: "Your Tour", emptyMsg: "Generate a tour to start the night!",
+            aboutBody: "<b>RoadToLoad</b> connects Budapest's most exciting spots into a single experience.<br><br>We don't just give you a route, we give you stories that you write — from one pub to another.<br><br>Reload the city, discover its hidden face, and start your own journey.",
+            contactTitle: "Contact Us", placeholderName: "Name", placeholderEmail: "Email address",
+            placeholderMsg: "Message...", btnSend: "Send", shareBtn: "Copy Tour", copyAlert: "Copied to clipboard!",
+            challenges: ["Drink a round of the cheapest shots!", "Ask the bartender: what's the house specialty?", "The last one to arrive pays for the round!", "Teach a Hungarian word to a foreigner!", "Take a selfie with the weirdest decoration!"]
+        }
+    };
 
     const bars = [
       { name: "Mazel Tov", street: "Akácfa utca 47.", coords: [47.497, 19.060] },
-      { name: "Szimpla Kert", street: "Kazinczy utca 14.", coords: [47.49700901903984, 19.06332904316594] },
+      { name: "Szimpla Kert", street: "Kazinczy utca 14.", coords: [47.4970, 19.0633] },
       { name: "Instant-Fogas", street: "Akácfa utca 49–51.", coords: [47.4984, 19.0610] },
       { name: "Kisüzem", street: "Kis Diófa utca 2.", coords: [47.4980, 19.0633] },
       { name: "Dzzs Bár", street: "Dohány utca 20.", coords: [47.4995, 19.0595] },
       { name: "Ellátó Kert", street: "Kazinczy utca 48.", coords: [47.4992, 19.0641] },
-      { name: "Trabant Presszó", street: "Budapest, Kerepesi út 104.", coords: [47.50431411432514, 19.142209458493806] },
-      { name: "Két Barát Pub és Darts Klub", street: "Budapest, Rákosfalva park", coords: [47.50700546667734, 19.145757390690022] },
-      { name: "Reining Söröző", street: "Budapest, Rákosfalva park 5.", coords: [47.5067096491249, 19.14542868449984] },
-      { name: "Sörkert Büfé", street: "Budapest, Kerepesi út 82-88.", coords: [47.50377006386992, 19.138195067329463] },
-      { name: "Zöld Kancsó", street: "Budapest, Örs vezér tere 1.", coords: [47.503811256504186, 19.13516780607615] },
-      { name: "Vezér Borozó-Söröző", street: "Budapest, Fehér út 3.", coords: [47.50090108462331, 19.136124337768518] },
-      { name: "Félidő Söröző", street: "Budapest, Kerepesi út 24.", coords: [47.50046584356149, 19.108750373846462] },
-      { name: "Stadion Söröző", street: "Budapest, Thököly út 42.", coords: [47.503934941377764, 19.088502122411175] },
-      { name: "Piros Hetes Presszó", street: "Budapest, Baross tér 15.", coords: [47.50057791815891, 19.081287881077348] },
-      { name: "Derby Büfé", street: "Budapest, Baross tér 6.", coords: [47.49944231353655, 19.081298417300548] },
-      { name: "Stifler 32 Bar", street: "Budapest, Rákóczi út 32.", coords: [47.49637813855068, 19.06717261293383] },
-      { name: "Sark", street: "Budapest, Wesselényi utca 25.", coords: [47.49812257497275, 19.064972445700594] },
-      { name: "Sark2", street: "Budapest, Wesselényi utca 21.", coords: [47.4980549491812, 19.064328967593877] },
-      { name: "Füge Udvar", street: "Budapest, Klauzál u. 19.", coords: [47.498364427800865, 19.0664885621075] },
-      { name: "Doboz Ruin Pub & Bar", street: "Budapest, Klauzál u. 10.", coords: [47.49799897927706, 19.06676042552224] },
-      { name: "4es6os Wesselényi", street: "Budapest, Erzsébet krt. 28.", coords: [47.50024874314327, 19.068671446071466] },
-      { name: "Gozsdu Udvar", street: "Budapest, Gozsdu Udvar", coords: [47.498504933178864, 19.05947636463971] },
-      { name: "Lámpás", street: "Budapest, Dob u. 15.", coords: [47.497638341939414, 19.060821402800286] },
-      { name: "Rácskert", street: "Budapest, Dob u. 40.", coords: [47.49961164035983, 19.062549476001468] },
-      { name: "Diófa Pinyó", street: "Budapest, Nagy Diófa u. 29.", coords: [47.49867902371778, 19.064025410705913] },
-      { name: "Instant-Fogas komplexum", street: "Budapest, Akácfa u. 51.", coords: [47.50053078701567, 19.065282175509363] },
-      { name: "SCORE! Sport Bar & Billiard", street: "Budapest, Dob u. 65.", coords: [47.50165996697666, 19.066968268184727] },
-      { name: "Kripta Söröző", street: "Budapest, Kertész u. 31.", coords: [47.50113841618521, 19.066339064774183] },
-      { name: "Rumpus Tiki Bar", street: "Budapest, Király u. 19.", coords: [47.4996301571262, 19.059516039409825] },
-      { name: "Fröccsterasz", street: "Budapest, Erzsébet tér 11-13.", coords: [47.49812932101141, 19.05358369904641] },
-      { name: "Akvárium Klub", street: "Budapest, Erzsébet tér 12.", coords: [47.49859622081475, 19.054163150133963] },
-      { name: "Ötkert Club", street: "Budapest, Zrínyi u. 4/A.", coords: [47.5004110277074, 19.04844520881007] },
-      { name: "Könyvtár Klub & Treffort Kert", street: "Budapest, Múzeum krt. 4.", coords: [47.494176087899675, 19.061978575057356] },
-      { name: "Bródy Italintézet", street: "Budapest, Bródy Sándor u. 2.", coords: [47.491999603293316, 19.06173211500117] },
-      { name: "Fecske Presszó", street: "Budapest, Baross u. 10.", coords: [47.4896880789013, 19.064139323481278] },
-      { name: "Főfotó", street: "Budapest, Baross u. 10.", coords: [47.48964452111458, 19.064123965922626] },
-      { name: "Andersen Pub", street: "Budapest, Krúdy u. 19.", coords: [47.49041557223433, 19.070046329466315] },
-      { name: "Krúdy Söröző", street: "Budapest, József krt. 47.", coords: [47.49040734125192, 19.07018648638851] },
-      { name: "Turbina Kulturális Központ", street: "Budapest, Vajdahunyad u. 4.", coords: [47.48893999374884, 19.073348795891004] },
-      { name: "A Grund", street: "Budapest, Nagy Templom utca 30.", coords: [47.4850662874461, 19.076201833461553] },
-      { name: "Grafika Söröző", street: "Budapest, Bakáts u. 1-3.", coords: [47.48249444429279, 19.06497841603372] },
-      { name: "A38 Hajó", street: "Budapest, Petőfi híd", coords: [47.476716506752346, 19.062783026524865] },
-      { name: "Scarabeus Music Café", street: "Budapest, Etele tér 6.", coords: [47.465829374224974, 19.02221181441473] },
-      { name: "Cafe Rio", street: "Budapest, Bartók Béla út 130.", coords: [47.470571661245685, 19.028782073475178] },
-      { name: "Pingvin Pub", street: "Budapest, Bocskai út 33.", coords: [47.47614013451706, 19.038791458673483] },
-      { name: "Rizmajer Sörház Móricz", street: "Budapest, Móricz Zsigmond körtér 4.", coords: [47.478056907334754, 19.046617700734114] },
-      { name: "Lakat S1 PUB", street: "Budapest, Siroki u. 1.", coords: [47.477061324809114, 19.048718200717822] },
-      { name: "Szpot", street: "Budapest, Bartók Béla út 11.", coords: [47.482053569182945, 19.052327069426813] },
-      { name: "MITZI – Kávé, Konyha, Bár", street: "Budapest, Bartók Béla út 1.", coords: [47.48300913061098, 19.052709330236876] },
-      { name: "Libella", street: "Budapest, Budafoki út 7.", coords: [47.482391600372516, 19.053727012854065] },
-      { name: "Dugattyús", street: "Budapest, Margit körút 15-17.", coords: [47.51353615518157, 19.034943044195156] },
-      { name: "Manyi – Kulturális Műhely", street: "Budapest, Margit körút 16.", coords: [47.51388752593867, 19.035526795118052] },
-      { name: "Ganz Söröző", street: "Budapest, Ganz u. 6.", coords: [47.5110054779781, 19.037447796903468] },
-      { name: "Cooltour Bar 3", street: "Budapest, Lövőház u. 18.", coords: [47.50976253819043, 19.02455209865654] },
-      { name: "Tetø", street: "Budapest, Lövőház u. 2.", coords: [47.50880578403261, 19.02694003850253] }
-
+      { name: "Sark", street: "Wesselényi utca 25.", coords: [47.4981, 19.0649] },
+      { name: "Lámpás", street: "Dob u. 15.", coords: [47.4976, 19.0608] }
     ];
 
-    const barListDiv = document.getElementById('bar-list');
+    let map = L.map('map', { zoomControl: false }).setView([47.4979, 19.0602], 14);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+    let currentTour = [];
     let currentLang = 'hu';
 
-    function generateTour() {
-      map.eachLayer(layer => { if (layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer); });
-      const shuffled = bars.sort(() => 0.5 - Math.random()).slice(0, 4);
-      let previous = null;
-      let listHTML = `<h3>${currentLang === 'hu' ? 'Mai túrád:' : 'Your tour:'}</h3>`;
-      shuffled.forEach((bar, i) => {
-        L.marker(bar.coords).addTo(map).bindPopup(`<b>${bar.name}</b><br>${bar.street}`);
-        listHTML += `<b>${i + 1}. ${bar.name}</b><br><span style="font-size:0.85rem;">${bar.street}</span><br><br>`;
-        if (previous) L.polyline([previous.coords, bar.coords], { color: '#fdd835', weight: 5 }).addTo(map);
-        previous = bar;
-      });
-      barListDiv.innerHTML = listHTML;
-      barListDiv.style.display = "block";
+    function changeLanguage(lang) {
+        currentLang = lang;
+        const t = translations[lang];
+        document.getElementById('nav-about').innerText = t.navAbout;
+        document.getElementById('nav-contact').innerText = t.navContact;
+        document.getElementById('generate').innerText = t.btnGen;
+        document.getElementById('mobile-generate').innerText = t.btnGen;
+        document.getElementById('list-title').innerText = t.listTitle;
+        document.getElementById('about-body').innerHTML = t.aboutBody;
+        document.getElementById('contact-title-text').innerText = t.contactTitle;
+        document.getElementById('input-name').placeholder = t.placeholderName;
+        document.getElementById('input-email').placeholder = t.placeholderEmail;
+        document.getElementById('input-msg').placeholder = t.placeholderMsg;
+        document.getElementById('btn-send').innerText = t.btnSend;
+        if (currentTour.length > 0) renderTour(currentTour);
+        else document.getElementById('list-empty-msg').innerText = t.emptyMsg;
     }
 
-    document.getElementById('generate').addEventListener('click', generateTour);
-    document.getElementById('mobile-generate').addEventListener('click', generateTour);
+    function generateTour() {
+        let tempBars = [...bars];
+        let tour = [];
+        
+        // --- RANDOM HOSSZ GENERÁLÁS ---
+        const r = Math.random();
+        let targetLength;
+        if (r < 0.4) targetLength = 3;       // 40% esély: 3 kocsma
+        else if (r < 0.7) targetLength = 4;  // 30% esély: 4 kocsma
+        else if (r < 0.9) targetLength = 5;  // 20% esély: 5 kocsma
+        else targetLength = Math.floor(Math.random() * 3) + 6; // 10% esély: 6, 7 vagy 8 kocsma
 
-    // 🍔 Hamburger menü
-    const hamburger = document.getElementById('hamburger');
-    const navMenu = document.getElementById('nav-menu');
-    hamburger.addEventListener('click', () => navMenu.classList.toggle('show'));
+        // Első véletlen kocsma
+        let first = tempBars.splice(Math.floor(Math.random()*tempBars.length), 1)[0];
+        tour.push(first);
 
-    // Overlay
-    const aboutOverlay = document.getElementById('about-overlay');
-    const contactOverlay = document.getElementById('contact-overlay');
-    document.getElementById('about-link').addEventListener('click', () => aboutOverlay.style.display = 'flex');
-    document.getElementById('contact-link').addEventListener('click', () => contactOverlay.style.display = 'flex');
-    document.getElementById('close-about').addEventListener('click', () => aboutOverlay.style.display = 'none');
-    document.getElementById('close-contact').addEventListener('click', () => contactOverlay.style.display = 'none');
+        // A többi kocsma távolság alapján (targetLength - 1 darab)
+        for (let i = 1; i < targetLength; i++) {
+            if (tempBars.length === 0) break;
+            tempBars.sort((a, b) => {
+                const d1 = Math.hypot(tour[tour.length-1].coords[0]-a.coords[0], tour[tour.length-1].coords[1]-a.coords[1]);
+                const d2 = Math.hypot(tour[tour.length-1].coords[0]-b.coords[0], tour[tour.length-1].coords[1]-b.coords[1]);
+                return d1 - d2;
+            });
+            tour.push(tempBars.splice(0, 1)[0]);
+        }
 
-    // 🌐 Nyelvváltó
-    const langSelect = document.getElementById('language-select');
-    const texts = {
-      hu: { about: "Rólunk", contact: "Kapcsolat", generate: "🎲 Túra generálása", aboutText: "<b>A RoadToLoad</b> Budapest legizgalmasabb helyeit köti össze egyetlen élménnyé.<br><br>Nem útvonalat adunk, hanem történeteket, amiket te írsz meg — egy kocsmától a másikig.<br><br>Töltsd újra a várost, fedezd fel a rejtett arcát, és indulj el a saját utadon.", contactTitle: "Kapcsolatfelvétel", name: "Név", email: "E-mail cím", msg: "Üzenet...", send: "Küldés" },
-      en: { about: "About", contact: "Contact", generate: "🎲 Generate tour", aboutText: "<b>RoadToLoad</b> connects Budapest's most exciting places into one adventure.<br><br>We don’t just give you a route — we give you stories you’ll create, from one bar to the next.<br><br>Reload the city, discover its hidden face, and start your own journey.", contactTitle: "Contact us", name: "Name", email: "E-mail address", msg: "Message...", send: "Send" }
+        currentTour = tour;
+        localStorage.setItem('roadToLoad_tour', JSON.stringify({ timestamp: Date.now(), tour: tour }));
+        renderTour(tour);
+    }
+
+    function renderTour(tour) {
+        map.eachLayer(layer => { if (layer instanceof L.Marker || layer instanceof L.Polyline) map.removeLayer(layer); });
+        let listHTML = "";
+        let bounds = [];
+        let prev = null;
+        const langChallenges = translations[currentLang].challenges;
+
+        tour.forEach((bar, i) => {
+            const randomChallenge = langChallenges[i % langChallenges.length];
+            L.marker(bar.coords).addTo(map).bindPopup(`<b>${bar.name}</b>`);
+            bounds.push(bar.coords);
+            listHTML += `
+                <div class="bar-item">
+                    <div class="bar-num">${i + 1}</div>
+                    <div class="bar-info">
+                        <b>${bar.name}</b><br><span>${bar.street}</span>
+                        <div class="challenge">🎯 ${randomChallenge}</div>
+                    </div>
+                </div>`;
+            if (prev) {
+                L.polyline([prev, bar.coords], { color: '#fdd835', weight: 6, opacity: 0.5 }).addTo(map);
+                L.polyline([prev, bar.coords], { color: '#ffffff', weight: 2, opacity: 0.7, dashArray: '8, 12' }).addTo(map);
+            }
+            prev = bar.coords;
+        });
+
+        document.getElementById('list-content').innerHTML = listHTML + `<button class="share-btn" onclick="copyTour()">${translations[currentLang].shareBtn}</button>`;
+        document.getElementById('bar-list').classList.remove('minimized');
+        document.getElementById('toggle-btn').innerHTML = '×';
+        map.fitBounds(bounds, {padding: [50, 50]});
+    }
+
+    function toggleList() {
+        const list = document.getElementById('bar-list');
+        const btn = document.getElementById('toggle-btn');
+        list.classList.toggle('minimized');
+        btn.innerHTML = list.classList.contains('minimized') ? '&lt; &gt;' : '×';
+    }
+
+    function showOverlay(id) { document.getElementById(id + '-overlay').style.display = 'flex'; }
+    function hideOverlay(id) { document.getElementById(id + '-overlay').style.display = 'none'; }
+    
+    function copyTour() {
+        let text = currentLang === 'hu' ? "🍺 RoadToLoad túránk:\n" : "🍺 Our RoadToLoad tour:\n";
+        currentTour.forEach((b, i) => text += `${i+1}. ${b.name}\n`);
+        navigator.clipboard.writeText(text);
+        alert(translations[currentLang].copyAlert);
+    }
+
+    function makeDraggable(el) {
+        let p1=0, p2=0, p3=0, p4=0;
+        const header = document.getElementById("list-header");
+        header.onmousedown = dragStart;
+        header.ontouchstart = dragStart;
+        function dragStart(e) {
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            p3 = clientX; p4 = clientY;
+            document.onmouseup = closeDrag;
+            document.ontouchend = closeDrag;
+            document.onmousemove = elementDrag;
+            document.ontouchmove = elementDrag;
+        }
+        function elementDrag(e) {
+            const clientX = e.clientX || e.touches[0].clientX;
+            const clientY = e.clientY || e.touches[0].clientY;
+            p1 = p3 - clientX; p2 = p4 - clientY; p3 = clientX; p4 = clientY;
+            el.style.top = (el.offsetTop - p2) + "px";
+            el.style.left = (el.offsetLeft - p1) + "px";
+            el.style.bottom = "auto"; el.style.right = "auto";
+        }
+        function closeDrag() {
+            document.onmouseup = null; document.onmousemove = null;
+            document.ontouchend = null; document.ontouchmove = null;
+        }
+    }
+
+    document.getElementById('hamburger').onclick = () => document.getElementById('nav-menu').classList.toggle('show');
+    
+    window.onload = () => {
+        makeDraggable(document.getElementById("bar-list"));
+        const saved = localStorage.getItem('roadToLoad_tour');
+        if (saved) {
+            const d = JSON.parse(saved);
+            if (Date.now() - d.timestamp < 12 * 60 * 60 * 1000) {
+                currentTour = d.tour;
+                renderTour(d.tour);
+            }
+        }
     };
-
-    langSelect.addEventListener('change', (e) => {
-      currentLang = e.target.value;
-      const t = texts[currentLang];
-      document.getElementById('about-link').textContent = t.about;
-      document.getElementById('contact-link').textContent = t.contact;
-      document.getElementById('generate').textContent = t.generate;
-      document.getElementById('mobile-generate').textContent = t.generate;
-      document.getElementById('about-text').innerHTML = t.aboutText;
-      document.getElementById('contact-title').textContent = t.contactTitle;
-      document.getElementById('name').placeholder = t.name;
-      document.getElementById('email').placeholder = t.email;
-      document.getElementById('message').placeholder = t.msg;
-      document.getElementById('send-btn').textContent = t.send;
-    });
   </script>
 </body>
 </html>
-
-
-
