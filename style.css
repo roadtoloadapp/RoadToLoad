@@ -1,277 +1,68 @@
-html, body {
-  height: 100%;
-  margin: 0;
-  font-family: 'Arial', sans-serif;
-  background: #111;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-}
+/* --- CSS STÍLUSOK --- */
+    body, html { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background: #121212; color: #eee; overflow: hidden; }
+    
+    header { background: #fdd835; color: #111; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; height: 60px; z-index: 2000; position: relative; }
+    .header-right { display: flex; align-items: center; gap: 15px; }
+    header h1 { font-size: 1.2rem; margin: 0; font-weight: 900; }
+    
+    .generate-btn-classic { background: #212121; color: #fdd835; padding: 8px 16px; border-radius: 6px; border: none; font-weight: bold; cursor: pointer; }
+    
+    nav { display: flex; gap: 20px; align-items: center; }
+    nav a { color: #111; text-decoration: none; font-weight: bold; cursor: pointer; }
 
-header {
-  background: #fdd835;
-  color: #212121;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 6px 16px;
-  height: 48px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-  position: relative;
-  z-index: 1000;
-}
+    #map { height: calc(100vh - 60px); width: 100%; position: relative; z-index: 1; }
 
-header h1 {
-  margin: 0;
-  font-size: 1.1rem;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
+    /* PANEL STÍLUS */
+    #bar-list { 
+        position: absolute; top: 80px; right: 20px; width: 280px; 
+        background: rgba(28, 28, 28, 0.95); backdrop-filter: blur(10px); 
+        border: 1px solid rgba(253, 216, 53, 0.4); border-radius: 12px; 
+        z-index: 1000; display: flex; flex-direction: column;
+    }
+    .list-header { background: #fdd835; color: #111; padding: 12px; cursor: grab; display: flex; justify-content: space-between; align-items: center; border-radius: 11px 11px 0 0; flex-shrink: 0; }
+    .toggle-list-btn { background: rgba(0,0,0,0.1); border: none; font-weight: bold; cursor: pointer; width: 45px; height: 30px; }
+    
+    #list-content { max-height: 400px; overflow-y: auto; overflow-x: hidden; }
+    
+    #bar-list.minimized { width: 65px; height: 55px; overflow: hidden; }
+    #bar-list.minimized #list-content, #bar-list.minimized h3 { display: none; }
 
-nav {
-  display: flex;
-  gap: 20px;
-  align-items: center;
-}
+    .bar-item { display: flex; gap: 12px; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .bar-num { background: #fdd835; color: #111; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.75rem; flex-shrink: 0; }
+    .bar-info b { color: #fdd835; }
+    .challenge { margin-top: 5px; font-size: 0.8rem; color: #ffd54f; font-style: italic; }
+    .share-btn { width: 100%; padding: 12px; background: transparent; border: none; color: #fdd835; font-weight: bold; cursor: pointer; border-top: 1px solid rgba(253, 216, 53, 0.2); }
 
-nav a, select, button {
-  text-decoration: none;
-  color: #212121;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-  background: none;
-  border: none;
-  outline: none;
-}
+    /* OVERLAYS */
+    .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 3000; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+    .overlay-text { max-width: 600px; text-align: center; line-height: 1.6; font-size: 1.1rem; }
+    .close-btn { position: absolute; top: 20px; right: 20px; background: #fdd835; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; border-radius: 4px; z-index: 3100; }
+    #contact-form { width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 15px; }
+    #contact-form input, #contact-form textarea { padding: 15px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff; font-size: 1rem; }
+    .submit-btn { background: #fdd835; color: #000; padding: 15px; border: none; font-weight: bold; cursor: pointer; border-radius: 6px; }
 
-nav a:hover, select:hover {
-  opacity: 0.7;
-}
+    .mobile-generate { display: none; }
 
-.generate-btn {
-  background: #212121;
-  color: #fdd835;
-  padding: 6px 14px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-.generate-btn:hover {
-  background: #333;
-  transform: scale(1.05);
-}
-
-.hamburger {
-  display: none;
-  flex-direction: column;
-  cursor: pointer;
-  gap: 4px;
-}
-
-.hamburger div {
-  width: 24px;
-  height: 3px;
-  background: #212121;
-  border-radius: 2px;
-}
-
-#map {
-  flex: 1;
-  width: 100%;
-  z-index: 1;
-}
-
-#bar-list {
-  position: absolute;
-  top: 60px;
-  right: 20px;
-  background: rgba(33,33,33,0.9);
-  color: #fdd835;
-  padding: 12px 16px;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  line-height: 1.5;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-  max-width: 220px;
-  display: none;
-  z-index: 1500;
-}
-
-#bar-list h3 {
-  margin: 0 0 6px 0;
-  font-size: 1.05rem;
-  border-bottom: 1px solid #fdd835;
-  padding-bottom: 4px;
-  text-align: center;
-}
-
-footer {
-  background: #fdd835;
-  color: #212121;
-  text-align: center;
-  padding: 6px;
-  font-size: 13px;
-  height: 32px;
-  line-height: 20px;
-  box-shadow: 0 -1px 4px rgba(0,0,0,0.3);
-}
-
-.overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(253, 216, 53, 0.9);
-  color: #212121;
-  display: none;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 40px;
-  z-index: 2000;
-  backdrop-filter: blur(4px);
-}
-
-.overlay p {
-  max-width: 600px;
-  font-size: 1.2rem;
-  line-height: 1.6;
-  font-weight: 500;
-}
-
-.overlay button.close-btn {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
-  color: #212121;
-  font-size: 1.5rem;
-  cursor: pointer;
-  font-weight: bold;
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-width: 400px;
-  width: 100%;
-}
-
-input, textarea {
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  background: #fff;
-  color: #212121;
-}
-
-textarea {
-  min-height: 100px;
-  resize: none;
-}
-
-button.submit-btn {
-  background: #212121;
-  color: #fdd835;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-
-/* --- MOBILNÉZET --- */
-@media (max-width: 768px) {
-  header {
-    justify-content: flex-end;
-    z-index: 2000; /* header mindig a barlista fölött */
-  }
-
-  .lang-switch {
-    display: flex;
-    align-items: center;
-    margin-right: 8px;
-    order: 1;
-    z-index: 2100; /* nyelvválasztó mindig a hamburger mellett */
-  }
-
-  nav {
-    display: none;
-    position: absolute;
-    top: 48px;
-    right: 0;
-    background: #fdd835;
-    flex-direction: column;
-    width: 100%;
-    text-align: center;
-    padding: 10px 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    z-index: 2200; /* nav mindig a barlista fölött */
-  }
-
-  nav.show {
-    display: flex;
-  }
-
-  /* Csak Rólunk és Kapcsolat */
-  nav a {
-    display: block;
-    padding: 10px 0;
-    border-top: 1px solid rgba(0,0,0,0.1);
-  }
-
-  nav .generate-btn {
-    display: none;
-  }
-
-  .hamburger {
-    display: flex;
-    margin-left: 8px;
-    z-index: 2300; /* hamburger ikon mindig legfelül */
-  }
-
-  #bar-list {
-    z-index: 1500; /* barlista a hamburger és nav mögött */
-  }
-
-  .mobile-generate {
-    position: fixed;
-    bottom: 60px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1600;
-    background: #212121;
-    color: #fdd835;
-    padding: 10px 18px;
-    border-radius: 8px;
-    border: none;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-  }
-}
-
-/* --- DESKTOP --- */
-@media (min-width: 769px) {
-  .mobile-generate {
-    display: none;
-  }
-
-  nav {
-    display: flex;
-  }
-
-  .lang-switch {
-    order: 0;
-  }
-}
+    /* MOBIL NÉZET JAVÍTÁSA */
+    @media (max-width: 768px) {
+      .hamburger { display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+      .hamburger div { width: 22px; height: 3px; background: #212121; }
+      nav { display: none; flex-direction: column; position: absolute; top: 60px; left: 0; width: 100%; background: #fdd835; padding: 20px 0; z-index: 2001; }
+      nav.show { display: flex; }
+      
+      #bar-list { 
+          width: 250px; 
+          max-height: 50vh; /* Megemeltem a biztonság kedvéért */
+          left: 10px !important; 
+          right: auto !important; 
+          top: 70px !important; 
+          bottom: auto; 
+          font-size: 0.85rem; 
+      }
+      #list-content { 
+          max-height: calc(50vh - 60px); /* Kiszámolja a fejléc levonása utáni maradékot */
+          overflow-y: auto; 
+          -webkit-overflow-scrolling: touch; 
+      }
+      .mobile-generate { display: block; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #fdd835; padding: 12px 20px; border-radius: 50px; border: none; font-weight: bold; z-index: 1500; box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-size: 0.9rem; }
+    }
