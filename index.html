@@ -67,7 +67,8 @@
 
   <div id="contact-overlay" class="overlay">
     <button class="close-btn" onclick="hideOverlay('contact')">×</button>
-    <form id="contact-form" onsubmit="event.preventDefault(); alert('Üzenet elküldve!'); hideOverlay('contact');">
+    <form id="contact-form" action="https://api.web3forms.com/submit" method="POST" onsubmit="event.preventDefault(); alert('Üzenet elküldve!'); hideOverlay('contact');">
+      <input type="hidden" name="access_key" value="fefe9987-1d25-45f4-8f72-8d82ef6f152d">
       <h2 id="contact-title-text">Kapcsolatfelvétel</h2>
       <h3 id="contact-email">hello@roadtoload.hu</h3>
       <input type="text" id="input-name" placeholder="Név" required>
@@ -258,5 +259,6 @@
   </script>
 </body>
 </html>
+
 
 
